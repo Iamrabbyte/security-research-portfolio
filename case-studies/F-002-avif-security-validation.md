@@ -1,138 +1,112 @@
-# AVIF Security Validation — Sanitized Case Study
+# AVIF / Next.js Security Validation
 
 ## Summary
 
-During an authorized black-box security assessment, I investigated a potentially vulnerable AVIF image-processing path in a Next.js application.
+During an authorized black-box assessment, I investigated an externally reachable AVIF image-processing path in a Next.js application.
 
-The goal was to determine what could be safely confirmed without causing denial of service or overstating impact.
+The goal was to determine what could be safely confirmed without overstating impact or causing denial of service.
 
-## Confirmed Evidence
+## Advisory Context
 
-The public frontend identified the application as using a Next.js version within the vendor-declared affected range.
+The assessed deployment exposed a Next.js version within the affected range described by the relevant vendor advisory.
 
-A benign attacker-controlled AVIF image was sent through the application's image-processing endpoint.
+The assessment confirmed that attacker-selected AVIF input could reach the server-side image-processing path and be decoded successfully.
 
-Observed result:
+The presence of an affected version and a reachable decoder was not treated as proof of remote code execution.
 
-- HTTP 200
-- Server-side image decoding occurred
-- AVIF input was converted to WebP
-- The response was not served solely from a pre-existing cache
+## Confirmed Behavior
 
-This confirmed that the potentially vulnerable image-processing path was externally reachable.
+A benign attacker-controlled AVIF image was supplied to the image-processing path.
+
+Observed behavior:
+
+- HTTP 200 response
+- server-side image decoding
+- AVIF input converted to WebP
+- cache-miss behavior observed
+- application remained healthy after testing
+
+This confirmed that the affected processing surface was externally reachable.
 
 ## Impact Validation
 
-Additional validation did not produce evidence of:
+No evidence was obtained for:
 
-- command execution;
-- environment-variable disclosure;
-- filesystem access;
-- database access;
-- secret extraction;
-- process crash;
-- application restart.
+- remote command execution
+- arbitrary file read
+- environment-variable disclosure
+- database access
+- secret extraction
+- process crash
+- application restart
 
-Because these higher-impact effects were not observed, the issue was not represented as confirmed remote code execution.
+Because these effects were not demonstrated, the issue was not represented as confirmed RCE.
 
-## Severity Calibration
+## Root Cause
 
-A vulnerable framework version and a reachable image decoder alone are not sufficient evidence of remote code execution.
+The exposed application relied on an image-processing component within a vendor-declared affected software range.
 
-The confirmed result was limited to:
+The security relevance of the deployment therefore depended on both:
 
-- an affected component;
-- an externally reachable image-processing path;
-- successful processing of attacker-selected AVIF input.
+1. whether attacker-controlled image input could reach the affected decoder;
+2. whether the underlying memory-corruption condition could be reproduced safely.
 
-Higher-impact claims were intentionally excluded because they were not demonstrated.
-
-## Safety Boundary
-
-No crash-capable or destructive payload was sent.
-
-The application remained healthy after validation.
-
-Testing was intentionally stopped before any action that could have caused denial of service.
-
-## Remediation
-
-Upgrade the affected Next.js deployment to a vendor-fixed version and rebuild or redeploy the application.
-
-If direct execution validation is required, it should be performed only against an isolated clone or laboratory environment using synthetic canary data.
-
-## Disclosure Note
-
-Target-identifying information, exact endpoint details, payloads, and operational infrastructure are intentionally omitted from this public portfolio.
-
-## Root Cause Analysis
-
-The application exposed an image-processing path backed by a framework version within the vendor-declared affected range.
-
-Testing confirmed that attacker-selected AVIF input reached the server-side image decoder and was re-encoded successfully.
-
-However, the presence of an affected version and a reachable decoder was not treated as sufficient evidence of remote code execution.
-
-No command execution, arbitrary file read, environment-variable disclosure, process restart, or other higher-impact effect was observed during validation.
+Only the first condition was confirmed during this assessment.
 
 ## Classification
 
-Potential classification:
-
 **CWE-787 — Out-of-bounds Write**
 
-This classification is associated with the underlying memory-corruption class described by the affected image-processing vulnerability.
+This classification refers to the underlying vulnerability class described by the affected image-processing component.
 
-The public case study does not claim that memory corruption or remote code execution was directly reproduced against the assessed deployment.
+The assessment does not claim that memory corruption itself was directly reproduced against the tested deployment.
+
+## Severity
+
+No production severity score is assigned because higher-impact exploitation was not demonstrated.
+
+The confirmed scope is limited to:
+
+- affected software presence
+- externally reachable image-processing path
+- successful server-side processing of attacker-selected AVIF input
+
+Any CVSS score representing RCE would be speculative on the available evidence.
 
 ## Remediation
 
-Recommended remediation includes:
+Recommended actions:
 
-- upgrade the affected Next.js deployment to a vendor-fixed version;
-- rebuild and redeploy the application after dependency updates;
+- upgrade Next.js and affected image-processing dependencies to vendor-fixed versions;
+- rebuild and redeploy the application after upgrading;
 - verify the effective runtime version after deployment;
 - review externally reachable image-processing functionality;
 - restrict unnecessary remote image sources where appropriate;
-- perform higher-impact exploitability testing only in an isolated clone or laboratory environment;
-- revalidate the affected processing path after remediation.
+- revalidate the processing path after remediation.
+
+If direct memory-corruption or code-execution validation is required, it should be performed only in an isolated clone or laboratory environment with synthetic canary data and recovery capability.
 
 ## Validation Timeline
 
-- **2026-09-29** — Framework version and AVIF processing path identified.
-- **2026-09-29** — Benign attacker-selected AVIF input was processed successfully.
-- **2026-09-29** — Post-test application health was verified.
-- **2026-10-01** — Additional active validation performed.
-- **2026-10-01** — No crash, command execution, file read, environment-variable access, or other higher-impact effect was observed.
-- **2026-10-01** — Finding remained limited to confirmed vulnerable-surface exposure rather than confirmed RCE.
+- **2026-09-29** — Affected framework version and reachable AVIF processing path identified.
+- **2026-09-29** — Benign attacker-controlled AVIF input processed successfully.
+- **2026-09-29** — Post-test application health verified.
+- **2026-10-01** — Additional validation performed.
+- **2026-10-01** — No command execution, file read, environment-variable access, crash, or process restart observed.
+- **2026-10-01** — Finding remained classified as reachable vulnerable-surface validation rather than confirmed RCE.
 
-## Evidence Quality
+## Disclosure Status
 
-The assessment included:
+No public vendor acknowledgement or disclosure reference is included in this portfolio entry.
 
-- framework-version identification;
-- externally reachable image-processing validation;
-- attacker-selected benign AVIF input;
-- server-side conversion confirmation;
-- cache-miss observation;
-- post-test application health checks;
-- explicit separation between confirmed behavior and theoretical maximum impact.
+The timeline above describes technical validation activity only.
 
-## Severity Note
+## Evidence Handling
 
-A vulnerable software version alone does not establish exploitability.
-
-Likewise, successful delivery of attacker-controlled input to an affected component does not by itself prove remote code execution.
-
-For this reason, the public finding intentionally distinguishes between:
-
-- affected component;
-- reachable processing path;
-- confirmed input processing;
-- unconfirmed higher-impact exploitation.
+Target-identifying information, exact endpoint details, payloads, infrastructure details, and other reusable operational information are intentionally omitted from this public version.
 
 ## Safety Boundary
 
-Crash-capable testing was intentionally avoided on the assessed environment.
+No crash-capable or destructive payload was sent to the assessed environment.
 
-Any validation requiring memory-corruption or command-execution proof should be performed only against an isolated environment with synthetic canary data and recovery capability.
+Testing stopped before any action that could reasonably risk denial of service.
