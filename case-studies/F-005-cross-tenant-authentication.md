@@ -16,12 +16,12 @@ A valid JWT was obtained through a normal login flow in one tenant context.
 
 Observed behavior:
 
-- an invalid bearer token was rejected with HTTP 401;
-- the valid JWT was accepted by protected endpoints in the issuing tenant;
-- the same valid JWT was also accepted by protected endpoints in additional tenant contexts;
-- successful responses were observed across multiple distinct tenant identities.
+- invalid bearer token: HTTP 401
+- valid JWT accepted in the issuing tenant
+- same valid JWT accepted by protected endpoints in additional tenant contexts
+- successful authenticated responses observed across multiple distinct tenant identities
 
-This demonstrated that authenticated session state was accepted outside the context in which it had originally been issued.
+This demonstrated that authenticated session state was accepted outside the tenant context in which it had originally been issued.
 
 ## Token Analysis
 
@@ -40,7 +40,7 @@ Raw JWT material is intentionally excluded from this public case study.
 
 The observed behavior suggests that authorization enforcement did not explicitly bind the authenticated session to the tenant context in which it was issued.
 
-The key distinction is that authentication itself succeeded normally.
+Authentication itself succeeded normally.
 
 The security concern appears at the authorization boundary: a session originating from one tenant context was accepted when presented to protected resources associated with other tenant contexts.
 
@@ -56,34 +56,42 @@ The demonstrated issue concerns authorization across tenant boundaries.
 
 A valid session was accepted by resources associated with additional tenant contexts, suggesting that tenant-specific authorization checks may not have been enforced.
 
-A secondary authentication-context concern may exist if tenant identity is also intended to form part of the authentication boundary.
-
 Final classification depends on the application's intended trust and isolation model.
 
 ## Impact
 
-If the tested tenant identities are intended to represent separate security boundaries, the observed behavior could allow an authenticated session issued in one tenant to access protected functionality in another tenant context.
+If the tested tenant identities are intended to represent separate security boundaries, the observed behavior could allow an authenticated user from one tenant context to access protected functionality associated with another.
 
 Potential consequences may include:
 
 - cross-tenant access;
 - bypass of intended tenant isolation;
-- unauthorized access to tenant-specific resources;
-- expansion of access beyond the originally authenticated security domain.
+- access beyond the originally authenticated security domain;
+- exposure of tenant-specific protected resources.
 
 No access to another real user's private data was demonstrated during this assessment.
 
-## Severity
+## CVSS
 
-No unconditional production severity rating is assigned in this public case study.
+No unconditional production CVSS score is assigned because the tenant-isolation model was not independently confirmed.
 
-Severity depends on the intended architecture.
+### Illustrative isolated-tenant scenario
 
-If the tested tenant identities are intended to be isolated authorization domains, the issue may represent a significant authorization weakness.
+If the tested tenants are intended to be separate authorization boundaries and successful reuse grants access to protected tenant resources, an illustrative CVSS v3.1 vector would be:
 
-If they are intentionally configured as trusted mirrors sharing one authorization boundary, the behavior may be expected.
+`CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N`
 
-Because the isolation model was not independently confirmed, severity is intentionally left conditional rather than overstated.
+**Illustrative base score: 6.5 (Medium)**
+
+This scenario assumes:
+
+- network-reachable exploitation;
+- a valid low-privilege account is required;
+- no user interaction is required;
+- unauthorized cross-tenant confidentiality impact is significant;
+- no demonstrated integrity or availability impact.
+
+This is not a vendor-assigned score and should not be applied if the tenants intentionally share one authorization boundary.
 
 ## Remediation
 
@@ -111,7 +119,12 @@ Recommended actions include:
 
 The timeline above describes technical validation activity only.
 
-No public claim is made here regarding vendor acknowledgement, bounty-program acceptance, coordinated disclosure, or remediation attribution.
+No public claim is made here regarding:
+
+- vendor acknowledgement;
+- bounty-program acceptance;
+- coordinated disclosure;
+- remediation attribution.
 
 ## Evidence Handling
 
