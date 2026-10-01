@@ -140,3 +140,12 @@ No financial action was performed.
 No persistence, brute force, destructive testing, or denial-of-service activity was used.
 
 The synthetic account was restored after validation.
+
+
+## Supporting Evidence
+
+A sanitized validation record is available here:
+
+- [Redacted Account Recovery Validation Evidence](../evidence/account-recovery-validation-redacted.md)
+
+The evidence preserves the observed HTTP status transitions, password-state change, restoration sequence, and later revalidation while intentionally excluding target-specific operational details and the exact triggering input.
