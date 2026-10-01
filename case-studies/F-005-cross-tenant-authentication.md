@@ -56,3 +56,66 @@ No brute force, denial-of-service, or destructive testing was performed.
 ## Disclosure Note
 
 Target domains, raw JWT values, account identifiers, request identifiers, and exact endpoint details are intentionally omitted from this public portfolio.
+
+## Root Cause Analysis
+
+The observed behavior suggests that authenticated session state was not explicitly bound to the tenant context in which it was issued.
+
+The validation showed that:
+
+- an invalid bearer token was rejected;
+- a valid JWT issued in one tenant context was accepted by protected endpoints in additional tenant contexts;
+- the token did not contain an observed tenant ID, tenant-domain, or audience claim binding it to the issuing tenant.
+
+This indicates a potential tenant-boundary enforcement weakness if those tenant identities are intended to operate as separate security domains.
+
+## Classification
+
+Potential classifications include:
+
+**CWE-639 — Authorization Bypass Through User-Controlled Key**
+
+and, depending on the intended trust model:
+
+**CWE-862 — Missing Authorization**
+
+Final classification depends on the application's intended tenant-isolation architecture.
+
+## Remediation
+
+Recommended remediation includes:
+
+- explicitly bind authenticated sessions or tokens to the intended tenant context;
+- validate tenant identity server-side on every protected request;
+- enforce tenant authorization independently of client-controlled routing or host context;
+- use an appropriate audience or tenant-specific claim where the architecture supports it;
+- reject tokens presented outside their authorized tenant boundary;
+- verify that shared identity infrastructure does not unintentionally grant cross-tenant resource access;
+- re-test protected endpoints after remediation.
+
+## Validation Timeline
+
+- **2026-09-30** — Initial cross-tenant validation performed using an authorized synthetic account.
+- **2026-09-30** — Invalid-token negative control returned HTTP 401.
+- **2026-09-30** — The same valid JWT was accepted across multiple distinct tenant identities.
+- **2026-09-30** — JWT claims were reviewed for explicit tenant or audience binding.
+- **2026-09-30** — Final severity was left conditional on confirmation of the intended tenant-isolation model.
+
+## Evidence Quality
+
+The finding was supported by:
+
+- an invalid-token negative control;
+- protected endpoint responses;
+- comparison across multiple distinct tenant identities;
+- inspection of JWT claim names;
+- use of a single authorized synthetic test account;
+- preservation of sensitive authentication material outside the public portfolio.
+
+No real customer account, payment data, KYC data, or private document content was accessed during validation.
+
+## Severity Note
+
+This finding should not be treated as definitively high severity unless the affected tenant identities are intended to represent separate security boundaries.
+
+If the environments are intentionally configured as trusted mirrors sharing one identity domain, the observed behavior may be expected.
