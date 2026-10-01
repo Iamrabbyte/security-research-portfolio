@@ -56,3 +56,70 @@ This case study demonstrates the importance of:
 ## Responsible Testing
 
 No customer account, user identifier, financial action, subscription payload, or mutation request was targeted during the validation.
+
+## Root Cause Analysis
+
+The initial validation indicated that authentication material exposed in public frontend content was accepted by the WebSocket service while missing or invalid credentials were rejected.
+
+This suggests that a secret or credential intended to control access to the WebSocket service was exposed to unauthenticated clients through frontend-delivered content.
+
+The later revalidation showed that the original WebSocket upgrade behavior was no longer reproducible at the current route state.
+
+Because of that, the current authentication value of the exposed credential is not considered confirmed.
+
+## Classification
+
+Potential classifications include:
+
+**CWE-200 — Exposure of Sensitive Information to an Unauthorized Actor**
+
+and, depending on the intended use of the exposed credential:
+
+**CWE-522 — Insufficiently Protected Credentials**
+
+The exact classification depends on whether the exposed value was intended to function as a secret authentication credential.
+
+## Remediation
+
+Recommended remediation includes:
+
+- remove secrets and authentication credentials from publicly delivered frontend content;
+- rotate or revoke any exposed credential;
+- avoid embedding reusable service credentials in client-side bundles;
+- use short-lived, user-bound or session-bound authentication where appropriate;
+- enforce server-side authorization independently of possession of a frontend-visible value;
+- review build-time environment variables for unintended public exposure;
+- revalidate the WebSocket authentication flow after remediation.
+
+## Validation Timeline
+
+- **2026-09-29** — Frontend-exposed WebSocket credential identified.
+- **2026-09-29** — Credential-authenticated WebSocket upgrade observed.
+- **2026-09-29** — Missing and invalid credential controls were rejected.
+- **2026-09-30** — Revalidation performed.
+- **2026-09-30** — Current upstream route no longer returned a WebSocket upgrade for any tested case.
+- **2026-09-30** — Original authentication behavior was classified as historical and not currently reconfirmed.
+
+## Evidence Quality
+
+The original validation included:
+
+- comparison of valid, missing, and invalid credential behavior;
+- successful WebSocket upgrade with the exposed credential;
+- rejected control cases without a valid credential;
+- preservation of the initial authentication result;
+- later revalidation against the same service path.
+
+The revalidation result is intentionally reported separately from the historical observation.
+
+## Severity Note
+
+The public exposure of a credential is a security concern, but the current impact depends on whether that credential remains accepted and what capabilities it grants.
+
+Because current WebSocket authentication could not be reconfirmed, this case study does not claim current private-feed access, publish capability, mutation capability, or critical impact.
+
+## Safety Boundary
+
+No customer account, user identifier, financial action, subscription payload, or mutation request was targeted during validation.
+
+The public version excludes the credential value, target domain, connection details, and other operational information.
