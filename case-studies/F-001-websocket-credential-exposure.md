@@ -2,9 +2,11 @@
 
 ## Summary
 
-During an authorized black-box security assessment, a credential exposed in public frontend content was initially observed to authenticate successfully to a WebSocket service.
+During an authorized black-box assessment, authentication material exposed through public frontend content was observed to successfully authenticate to a WebSocket service.
 
-The finding was later re-tested and was no longer reproducible at the current route state.
+The original validation showed a clear difference between the exposed credential and negative controls.
+
+A later revalidation could not reproduce the WebSocket upgrade behavior, so the finding is presented as a historical validation rather than a currently confirmed authentication bypass.
 
 ## Initial Validation
 
@@ -13,113 +15,129 @@ The public frontend exposed a WebSocket-related credential.
 During the original validation:
 
 - the exposed credential resulted in a successful WebSocket upgrade;
-- requests without the credential were rejected;
-- requests using an invalid credential were rejected.
+- a request without the credential was rejected;
+- a request using an invalid credential was rejected.
 
-This established a meaningful authentication difference at the time of testing.
+Observed behavior:
+
+- exposed credential: HTTP 101 Switching Protocols
+- missing credential: HTTP 401
+- invalid credential: HTTP 401
+
+This established that the exposed value had authentication significance at the time of testing.
 
 ## Revalidation
 
-During a later revalidation attempt, the upstream route no longer returned a WebSocket upgrade for any tested case.
+A later revalidation tested the same authentication conditions again.
 
-Instead, the tested requests received the same ordinary HTTP response.
+At that time:
 
-Because the previous behavior could not be reproduced, the authentication value of the exposed credential was not represented as currently confirmed.
+- no-token request did not establish a WebSocket session;
+- invalid-token request did not establish a WebSocket session;
+- previously exposed credential did not establish a WebSocket session;
+- all tested cases reached the same ordinary HTTP response instead.
 
-## Evidence Handling
-
-The public version of this case study intentionally excludes:
-
-- the credential value;
-- target domains;
-- exact connection details;
-- private channel identifiers;
-- raw authentication material.
-
-## Current Classification
-
-- Public credential exposure: historically observed
-- Successful WebSocket authentication: historically validated
-- Current authentication value: not reconfirmed
-- Private-feed access: not proven
-- Mutation or publish capability: not proven
-
-## Security Practice Demonstrated
-
-This case study demonstrates the importance of:
-
-- preserving historical evidence;
-- performing revalidation;
-- distinguishing historical observations from current reproducibility;
-- avoiding escalation of severity when impact is not currently confirmed.
-
-## Responsible Testing
-
-No customer account, user identifier, financial action, subscription payload, or mutation request was targeted during the validation.
+The original authentication behavior therefore could not be reconfirmed.
 
 ## Root Cause Analysis
 
-The initial validation indicated that authentication material exposed in public frontend content was accepted by the WebSocket service while missing or invalid credentials were rejected.
+The original behavior indicates that authentication material intended to control access to the WebSocket service was exposed to unauthenticated clients through publicly delivered frontend content.
 
-This suggests that a secret or credential intended to control access to the WebSocket service was exposed to unauthenticated clients through frontend-delivered content.
+Embedding reusable service credentials in client-visible resources can undermine the security boundary that the credential is intended to enforce.
 
-The later revalidation showed that the original WebSocket upgrade behavior was no longer reproducible at the current route state.
-
-Because of that, the current authentication value of the exposed credential is not considered confirmed.
+However, because the original WebSocket behavior is no longer reproducible, the current validity and capabilities of the exposed credential are not assumed.
 
 ## Classification
 
-Potential classifications include:
+**Primary classification: CWE-200 — Exposure of Sensitive Information to an Unauthorized Actor**
 
-**CWE-200 — Exposure of Sensitive Information to an Unauthorized Actor**
-
-and, depending on the intended use of the exposed credential:
+A secondary classification may apply depending on the credential's intended security role:
 
 **CWE-522 — Insufficiently Protected Credentials**
 
-The exact classification depends on whether the exposed value was intended to function as a secret authentication credential.
+The public evidence supports exposure and historical authentication significance.
+
+It does not establish current private-feed access, publish capability, account access, or mutation capability.
+
+## Impact
+
+At the time of the original validation, possession of the frontend-exposed credential produced a successful WebSocket authentication result that was not available with missing or invalid credentials.
+
+Potential impact would depend on what authenticated WebSocket capabilities the credential actually authorized.
+
+The assessment did not demonstrate:
+
+- access to a private customer account;
+- access to private user data;
+- authenticated mutation capability;
+- publish capability;
+- financial actions;
+- privilege escalation.
+
+## CVSS
+
+No production CVSS score is assigned to this case study.
+
+The original authentication behavior was historically validated, but the capabilities available after authentication were not demonstrated and the behavior is no longer reproducible.
+
+Assigning confidentiality, integrity, or availability impact values would therefore require assumptions not supported by the preserved evidence.
 
 ## Remediation
 
-Recommended remediation includes:
+Recommended actions include:
 
-- remove secrets and authentication credentials from publicly delivered frontend content;
-- rotate or revoke any exposed credential;
-- avoid embedding reusable service credentials in client-side bundles;
-- use short-lived, user-bound or session-bound authentication where appropriate;
-- enforce server-side authorization independently of possession of a frontend-visible value;
-- review build-time environment variables for unintended public exposure;
-- revalidate the WebSocket authentication flow after remediation.
+- remove reusable authentication credentials from publicly delivered frontend content;
+- rotate or revoke any credential that has been publicly exposed;
+- avoid embedding service secrets in client-side bundles or public runtime configuration;
+- use short-lived, scoped, user-bound or session-bound authentication where appropriate;
+- enforce authorization independently of possession of a frontend-visible value;
+- audit build-time and runtime variables for unintended public exposure;
+- revalidate WebSocket authentication after remediation.
 
 ## Validation Timeline
 
-- **2026-09-29** — Frontend-exposed WebSocket credential identified.
-- **2026-09-29** — Credential-authenticated WebSocket upgrade observed.
-- **2026-09-29** — Missing and invalid credential controls were rejected.
+- **2026-09-29** — WebSocket-related credential identified in public frontend content.
+- **2026-09-29** — Exposed credential produced HTTP 101 Switching Protocols.
+- **2026-09-29** — Missing and invalid credential controls returned HTTP 401.
 - **2026-09-30** — Revalidation performed.
-- **2026-09-30** — Current upstream route no longer returned a WebSocket upgrade for any tested case.
-- **2026-09-30** — Original authentication behavior was classified as historical and not currently reconfirmed.
+- **2026-09-30** — WebSocket upgrade no longer reproduced for any tested credential condition.
+- **2026-09-30** — Finding retained as historical validation only.
 
-## Evidence Quality
+## Disclosure Status
 
-The original validation included:
+The timeline above describes technical validation and revalidation activity.
 
-- comparison of valid, missing, and invalid credential behavior;
-- successful WebSocket upgrade with the exposed credential;
-- rejected control cases without a valid credential;
-- preservation of the initial authentication result;
-- later revalidation against the same service path.
+No public claim is made here regarding:
 
-The revalidation result is intentionally reported separately from the historical observation.
+- vendor acknowledgement;
+- bounty-program acceptance;
+- coordinated disclosure;
+- remediation attribution;
+- whether the later behavior change resulted from this research.
 
-## Severity Note
+## Evidence Handling
 
-The public exposure of a credential is a security concern, but the current impact depends on whether that credential remains accepted and what capabilities it grants.
+The public version intentionally excludes:
 
-Because current WebSocket authentication could not be reconfirmed, this case study does not claim current private-feed access, publish capability, mutation capability, or critical impact.
+- the credential value;
+- target domains and URLs;
+- connection details;
+- private channel identifiers;
+- raw authentication material;
+- reusable operational information.
+
+The purpose of this case study is to preserve the evidence and revalidation history without exposing a credential or target-specific attack material.
 
 ## Safety Boundary
 
-No customer account, user identifier, financial action, subscription payload, or mutation request was targeted during validation.
+Testing was limited to authentication and connection behavior.
 
-The public version excludes the credential value, target domain, connection details, and other operational information.
+No customer account was targeted.
+
+No financial action was performed.
+
+No publish or mutation action was performed.
+
+No private-user channel was intentionally targeted.
+
+No brute force, destructive testing, persistence, or denial-of-service activity was used.
