@@ -80,3 +80,59 @@ The synthetic account was restored after validation.
 ## Disclosure Note
 
 The exploit input, endpoint paths, credentials, verification values, passwords, cookies, and raw session tokens are intentionally excluded from this public portfolio.
+## Root Cause Analysis
+
+The observed behavior indicates that the account-recovery flow did not strictly enforce the expected verification value before allowing the password state to change.
+
+The validation chain showed that:
+
+- an invalid verification attempt was rejected;
+- a recovery transaction could still be initiated;
+- a password replacement was then accepted without the delivered verification code being read or used;
+- authentication succeeded with the tester-selected password;
+- authentication with the former password failed.
+
+This demonstrates that the password state changed even though the intended verification step was not successfully completed.
+
+## Classification
+
+**CWE-640 — Weak Password Recovery Mechanism for Forgotten Password**
+
+Potential impact:
+
+- unauthorized password replacement;
+- account takeover;
+- loss of account confidentiality and integrity.
+
+## Remediation
+
+Recommended remediation includes:
+
+- enforce server-side verification of the recovery challenge before any password change is accepted;
+- bind the recovery challenge to the specific account and recovery transaction;
+- validate the expected data type and format of all verification parameters;
+- invalidate recovery challenges immediately after successful use;
+- apply expiration and attempt limits to recovery challenges;
+- ensure password replacement cannot proceed if verification state is incomplete or invalid;
+- re-test the complete recovery flow after remediation.
+
+## Validation Timeline
+
+- **2026-09-29** — Initial validation performed against an authorized synthetic account.
+- **2026-09-29** — Password-state transition confirmed.
+- **2026-09-29** — Synthetic account restored to its original state.
+- **2026-10-01** — Revalidation performed.
+- **2026-10-01** — Previously observed bypass behavior was no longer reproducible in the tested tenant context.
+
+## Evidence Quality
+
+The finding was validated using:
+
+- a negative verification control;
+- server-generated HTTP responses;
+- account-state transition testing;
+- successful authentication with the temporary password;
+- rejection of the former password;
+- restoration and post-test authentication verification.
+
+Sensitive exploit details, credentials, endpoint paths, verification values, cookies, and raw session tokens are intentionally excluded from this public version.
