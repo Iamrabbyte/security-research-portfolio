@@ -6,10 +6,10 @@ All published work is based on intentionally vulnerable environments, systems I 
 
 ## Selected Case Studies
 
-- [WebSocket Credential Exposure](case-studies/F-001-websocket-credential-exposure.md)
-- [AVIF / Next.js Security Validation](case-studies/F-002-avif-security-validation.md)
-- [Account Recovery Bypass](case-studies/F-003-account-recovery-bypass.md)
-- [Cross-Tenant Authentication](case-studies/F-005-cross-tenant-authentication.md)
+- [WebSocket Credential Exposure](case-studies/websocket-credential-exposure.md)
+- [AVIF / Next.js Security Validation](case-studies/avif-security-validation.md)
+- [Account Recovery Bypass](case-studies/account-recovery-bypass.md)
+- [Cross-Tenant Authentication](case-studies/cross-tenant-authentication.md)
 
 ## Sample Report
 
