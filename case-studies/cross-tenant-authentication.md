@@ -152,3 +152,11 @@ No password or profile data was modified.
 No payment, KYC, private-document, or financial data was accessed.
 
 No brute force, denial-of-service, destructive payload, or persistence technique was used.
+
+## Supporting Evidence
+
+A sanitized validation record is available here:
+
+- [Redacted Cross-Tenant Validation Evidence](../evidence/cross-tenant-validation-redacted.md)
+
+The evidence preserves the invalid-token control, cross-tenant authenticated responses, JWT claim review, and impact boundaries while intentionally excluding target identities, raw tokens, exact endpoint paths, and reusable authentication material.
