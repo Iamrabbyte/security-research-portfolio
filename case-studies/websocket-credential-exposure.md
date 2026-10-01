@@ -141,3 +141,11 @@ No publish or mutation action was performed.
 No private-user channel was intentionally targeted.
 
 No brute force, destructive testing, persistence, or denial-of-service activity was used.
+
+## Supporting Evidence
+
+A sanitized validation record is available here:
+
+- [Redacted WebSocket Validation Evidence](../evidence/websocket-validation-redacted.md)
+
+The evidence preserves the historical authentication comparison, negative controls, and later revalidation while intentionally excluding the target hostname, credential value, and reusable connection details.
