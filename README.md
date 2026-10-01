@@ -136,25 +136,3 @@ Its purpose is to demonstrate:
 - revalidation discipline
 
 Sensitive reproduction details are intentionally withheld from the public versions.
-
-
-## Tests
-
-The project includes a small unit-test suite covering JWT segment decoding and basic claim handling.
-
-Run the tests with:
-
-    python -m unittest discover -s tests -v
-
-Expected result:
-
-    Ran 4 tests
-
-    OK
-
-The tests currently cover:
-
-- Base64URL decoding
-- JSON payload decoding
-- invalid segment rejection
-- audience and tenant claim handling
