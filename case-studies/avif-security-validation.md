@@ -135,6 +135,14 @@ The purpose of this case study is to document the validation methodology and evi
 
 No crash-capable or destructive payload was sent to the assessed environment.
 
+## Supporting Evidence
+
+A sanitized validation record is available here:
+
+- [Redacted AVIF Validation Evidence](../evidence/avif-validation-redacted.md)
+
+The evidence preserves the confirmed server-side AVIF processing behavior, affected software context, later revalidation, and explicit limits on higher-impact claims while intentionally excluding target-specific infrastructure details and reusable payload material.
+
 Testing stopped before any action that could reasonably introduce denial-of-service risk.
 
 Any higher-impact validation requiring memory corruption or execution proof should be reproduced only in a controlled laboratory environment.
