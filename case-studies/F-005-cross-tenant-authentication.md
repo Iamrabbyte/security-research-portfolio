@@ -1,121 +1,141 @@
-# Cross-Tenant Authentication — Sanitized Case Study
+# Cross-Tenant Authentication Boundary Validation
 
 ## Summary
 
-During an authorized black-box security assessment, I identified a potential cross-tenant authentication boundary issue affecting a multi-tenant web application.
+During an authorized black-box assessment, I investigated whether an authenticated session issued in one tenant context was accepted by protected API resources associated with other tenant contexts.
 
 Testing was performed exclusively with an authorized synthetic test account.
 
-## Observation
+The assessment confirmed that the same valid JWT was accepted across multiple distinct tenant identities, while an invalid bearer token was rejected.
 
-A valid JWT issued after a normal login to one tenant was accepted by protected API endpoints associated with other distinct tenant identities.
+Final security impact depends on whether those tenant identities are intended to represent separate authorization boundaries.
 
-As a negative control, an invalid bearer token was rejected with HTTP 401.
+## Confirmed Behavior
 
-The same valid authentication token received HTTP 200 responses across multiple tenant contexts.
+A valid JWT was obtained through a normal login flow in one tenant context.
+
+Observed behavior:
+
+- an invalid bearer token was rejected with HTTP 401;
+- the valid JWT was accepted by protected endpoints in the issuing tenant;
+- the same valid JWT was also accepted by protected endpoints in additional tenant contexts;
+- successful responses were observed across multiple distinct tenant identities.
+
+This demonstrated that authenticated session state was accepted outside the context in which it had originally been issued.
 
 ## Token Analysis
 
 The observed JWT contained the following claim names:
 
-- exp
-- iat
-- iss
-- sub
+- `exp`
+- `iat`
+- `iss`
+- `sub`
 
-No tenant ID, tenant-domain, or audience claim was observed that explicitly bound the token to the issuing tenant.
+No explicit tenant ID, tenant-domain, or audience claim was observed that bound the token to the issuing tenant context.
 
-## Potential Impact
-
-If the tenant identifiers represent separate security boundaries, acceptance of the same session token across tenants may indicate insufficient tenant isolation.
-
-If the domains are intentionally configured as trusted mirrors sharing one identity boundary, this behavior may instead be expected.
-
-For this reason, final severity depends on the intended tenant-isolation model.
-
-## Validation Method
-
-The behavior was validated using:
-
-- an authorized synthetic account;
-- a normally issued authentication token;
-- an invalid-token negative control;
-- comparison of protected API behavior across distinct tenant contexts;
-- JWT claim inspection.
-
-## Safety
-
-No real user account was accessed.
-
-No password or profile data was modified.
-
-No payment, KYC, or financial data was accessed.
-
-No brute force, denial-of-service, or destructive testing was performed.
-
-## Disclosure Note
-
-Target domains, raw JWT values, account identifiers, request identifiers, and exact endpoint details are intentionally omitted from this public portfolio.
+Raw JWT material is intentionally excluded from this public case study.
 
 ## Root Cause Analysis
 
-The observed behavior suggests that authenticated session state was not explicitly bound to the tenant context in which it was issued.
+The observed behavior suggests that authorization enforcement did not explicitly bind the authenticated session to the tenant context in which it was issued.
 
-The validation showed that:
+The key distinction is that authentication itself succeeded normally.
 
-- an invalid bearer token was rejected;
-- a valid JWT issued in one tenant context was accepted by protected endpoints in additional tenant contexts;
-- the token did not contain an observed tenant ID, tenant-domain, or audience claim binding it to the issuing tenant.
+The security concern appears at the authorization boundary: a session originating from one tenant context was accepted when presented to protected resources associated with other tenant contexts.
 
-This indicates a potential tenant-boundary enforcement weakness if those tenant identities are intended to operate as separate security domains.
+If those tenants are intended to operate as separate security domains, this indicates insufficient server-side enforcement of tenant isolation.
+
+If the environments are intentionally configured as trusted mirrors sharing one identity and authorization domain, the observed behavior may be expected.
 
 ## Classification
 
-Potential classifications include:
+**Primary classification: CWE-863 — Incorrect Authorization**
 
-**CWE-639 — Authorization Bypass Through User-Controlled Key**
+The demonstrated issue concerns authorization across tenant boundaries.
 
-and, depending on the intended trust model:
+A valid session was accepted by resources associated with additional tenant contexts, suggesting that tenant-specific authorization checks may not have been enforced.
 
-**CWE-862 — Missing Authorization**
+A secondary authentication-context concern may exist if tenant identity is also intended to form part of the authentication boundary.
 
-Final classification depends on the application's intended tenant-isolation architecture.
+Final classification depends on the application's intended trust and isolation model.
+
+## Impact
+
+If the tested tenant identities are intended to represent separate security boundaries, the observed behavior could allow an authenticated session issued in one tenant to access protected functionality in another tenant context.
+
+Potential consequences may include:
+
+- cross-tenant access;
+- bypass of intended tenant isolation;
+- unauthorized access to tenant-specific resources;
+- expansion of access beyond the originally authenticated security domain.
+
+No access to another real user's private data was demonstrated during this assessment.
+
+## Severity
+
+No unconditional production severity rating is assigned in this public case study.
+
+Severity depends on the intended architecture.
+
+If the tested tenant identities are intended to be isolated authorization domains, the issue may represent a significant authorization weakness.
+
+If they are intentionally configured as trusted mirrors sharing one authorization boundary, the behavior may be expected.
+
+Because the isolation model was not independently confirmed, severity is intentionally left conditional rather than overstated.
 
 ## Remediation
 
-Recommended remediation includes:
+Recommended actions include:
 
 - explicitly bind authenticated sessions or tokens to the intended tenant context;
 - validate tenant identity server-side on every protected request;
 - enforce tenant authorization independently of client-controlled routing or host context;
-- use an appropriate audience or tenant-specific claim where the architecture supports it;
-- reject tokens presented outside their authorized tenant boundary;
-- verify that shared identity infrastructure does not unintentionally grant cross-tenant resource access;
-- re-test protected endpoints after remediation.
+- use tenant-specific or audience-specific token claims where appropriate;
+- verify those claims on every protected request;
+- reject sessions presented outside their authorized tenant boundary;
+- review shared authentication infrastructure for unintended cross-tenant trust;
+- revalidate protected endpoints after remediation.
 
 ## Validation Timeline
 
-- **2026-09-30** — Initial cross-tenant validation performed using an authorized synthetic account.
+- **2026-09-30** — Authorized synthetic test account authenticated normally.
 - **2026-09-30** — Invalid-token negative control returned HTTP 401.
-- **2026-09-30** — The same valid JWT was accepted across multiple distinct tenant identities.
-- **2026-09-30** — JWT claims were reviewed for explicit tenant or audience binding.
-- **2026-09-30** — Final severity was left conditional on confirmation of the intended tenant-isolation model.
+- **2026-09-30** — Valid JWT accepted in the issuing tenant context.
+- **2026-09-30** — Same JWT accepted by protected endpoints in additional tenant contexts.
+- **2026-09-30** — JWT claims reviewed for tenant or audience binding.
+- **2026-09-30** — Final severity left conditional on confirmation of the intended tenant-isolation model.
 
-## Evidence Quality
+## Disclosure Status
 
-The finding was supported by:
+The timeline above describes technical validation activity only.
 
-- an invalid-token negative control;
-- protected endpoint responses;
-- comparison across multiple distinct tenant identities;
-- inspection of JWT claim names;
-- use of a single authorized synthetic test account;
-- preservation of sensitive authentication material outside the public portfolio.
+No public claim is made here regarding vendor acknowledgement, bounty-program acceptance, coordinated disclosure, or remediation attribution.
 
-No real customer account, payment data, KYC data, or private document content was accessed during validation.
+## Evidence Handling
 
-## Severity Note
+The public version intentionally excludes:
 
-This finding should not be treated as definitively high severity unless the affected tenant identities are intended to represent separate security boundaries.
+- target domains and URLs;
+- raw JWT values;
+- account identifiers;
+- request identifiers;
+- exact endpoint paths;
+- credentials;
+- private user data;
+- reusable operational details.
 
-If the environments are intentionally configured as trusted mirrors sharing one identity domain, the observed behavior may be expected.
+The purpose of this case study is to document the authorization behavior and validation methodology without exposing target-specific secrets or attack material.
+
+## Safety Boundary
+
+Testing was limited to a single authorized synthetic account.
+
+No real customer account was accessed.
+
+No password or profile data was modified.
+
+No payment, KYC, private-document, or financial data was accessed.
+
+No brute force, denial-of-service, destructive payload, or persistence technique was used.
